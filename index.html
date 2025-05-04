@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouTube Clone</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background-color: #f9f9f9; color: #0f0f0f; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .left { display: flex; align-items: center; }
+    header img.logo { height: 25px; margin-left: 8px; }
+
+    header .search-box {
+      flex: 1;
+      max-width: 600px;
+      display: flex;
+      margin: 0 20px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-right: none;
+      border-radius: 20px 0 0 20px;
+    }
+
+    .search-box button {
+      padding: 8px 16px;
+      background: #f8f8f8;
+      border: 1px solid #ccc;
+      border-left: none;
+      border-radius: 0 20px 20px 0;
+      cursor: pointer;
+    }
+
+    header .sign-in {
+      background: none;
+      border: 1px solid #065fd4;
+      color: #065fd4;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    nav.sidebar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 80px;
+      background: white;
+      height: 100%;
+      padding-top: 20px;
+      border-right: 1px solid #ddd;
+    }
+
+    nav.sidebar div {
+      text-align: center;
+      padding: 12px 0;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .filters {
+      margin-left: 80px;
+      padding: 12px 16px;
+      background: white;
+      overflow-x: auto;
+      white-space: nowrap;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .filters span {
+      display: inline-block;
+      background: #eee;
+      padding: 6px 12px;
+      border-radius: 16px;
+      margin-right: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .filters span.active {
+      background: black;
+      color: white;
+    }
+
+    .content {
+      margin-left: 80px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .video-card {
+      position: relative;
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .thumbnail {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .thumbnail img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 36px;
+      border-radius: 50%;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-info {
+      margin-top: 8px;
+    }
+
+    .video-title {
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .video-meta {
+      font-size: 12px;
+      color: #606060;
+      margin-top: 4px;
+    }
+
+    .iframe-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .iframe-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .custom-controls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 5px 10px;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+      display: none;
+      cursor: pointer;
+    }
+
+  #profileSection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  #profilePic {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  #profilePic:hover {
+    transform: scale(1.05);
+  }
+
+  #profileDetails {
+    position: absolute;
+    flex-direction: column;
+    gap: 5px;
+    margin-left:-200px;
+    z-index:100;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  #signOutBtn {
+    padding: 4px 8px;
+    font-size: 14px;
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #signOutBtn:hover {
+    background-color: #dc2626;
+  }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" class="logo" alt="Logo">
+    </div>
+    <div class="search-box">
+      <input type="text" placeholder="Search">
+      <button>🔍</button>
+    </div>
+    <button id='sign-in' class="sign-in">Sign In</button>
+    <!-- Profile Section -->
+<div id="profileSection" style="display: none; margin-top: 20px;">
+  <img id="profilePic" width="60" height="60" />
+  <div id="profileDetails" style='display:none;'>
+    <h2 id="userName"></h2>
+    <p id="userEmail"></p>
+    <button id="signOutBtn">Sign Out</button>
+  </div>
+</div>
+
+
+  </header>
+
+  <nav class="sidebar">
+    <div>🏠<br/>Home</div>
+    <div>🔥<br/>Shorts</div>
+    <div>📺<br/>Subs</div>
+    <div>👤<br/>You</div>
+    <div>🕘<br/>History</div>
+  </nav>
+
+  <div class="filters">
+  <span class="active" data-query="all">All</span>
+  <span data-query="live">Live</span>
+  <span data-query="news">News</span>
+  <span data-query="music">Music</span>
+  <span data-query="gaming">Gaming</span>
+</div>
+
+
+  <div class="content" id="videosContainer">
+    <!-- Videos will be inserted here -->
+  </div>
+  <div id="loader" style="text-align:center; display:none;">Loading...</div>
+
+
+  <script>
+   // const API_KEY = "AIzaSyDmeUHrQTeaB1l_w8HJXxTFi0fZQmbm9ks";
+   //let API_KEY = "AIzaSyAitKhRKcBPKQ5M-WHMaOhdDM76czCHLDE"
+   let API_KEY = "AIzaSyBtEufCZQiE3p3XZrvc-RiAsuPgkMkrc-c"
+    const videoContainer = document.getElementById('videosContainer');
+let queries = ["technology", "coding", "AI", "robots", "science", "startup", "gadgets", "electronics"];
+let typeQ = 'all'
+//toggling the button
+document.querySelectorAll('.filters span').forEach(span => {
+  span.addEventListener('click', () => {
+    document.querySelector('.filters .active').classList.remove('active');
+    span.classList.add('active');
+
+    const selected = span.dataset.query;
+    typeQ = selected
+
+    // Call appropriate fetch function
+    if (selected === 'all') {
+      const saved = localStorage.getItem("savedVideos");
+if (saved && JSON.parse(saved).length > 0) {
+  loadFromLocalStorage()
+} else {
+  console.log("No videos saved in LocalStorage");
+  setTimeout(()=>{
+fetchVideosByRandomQuery();
+},1000)
+}
+    } else if (selected === 'live') {
+      fetchLive()
+    } else {
+      fetchByTopic(selected);
+    }
+  });
+});
+
+    async function fetchVideos(d) {
+      try {
+        //const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet&chart=mostPopular&maxResults=120&regionCode=IN`);
+        //const data = await res.json();
+        if(typeQ != 'all'){
+            videoContainer.innerHTML = ''
+        }
+
+        d.forEach(video => {
+          const { title, channelTitle, thumbnails } = video.snippet;
+          const videoId = video.id;
+
+          const card = document.createElement('div');
+          card.className = 'video-card';
+
+          card.innerHTML = `
+            <div class="thumbnail" data-video-id="${videoId}">
+              <img src="${thumbnails.high.url}" alt="${title}" />
+
+            </div>
+            <div class="video-info">
+              <div class="video-title">${title}</div>
+              <div class="video-meta">${channelTitle}</div>
+            </div>
+          `;
+
+          videoContainer.appendChild(card);
+        });
+
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+          thumb.addEventListener('click', function () {
+            const videoId = this.dataset.videoId;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'iframe-wrapper';
+            wrapper.innerHTML = `
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=0"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
+              <div class="custom-controls" onclick="alert('Custom Controls Coming Soon')">⏯ Pause</div>
+            `;
+            this.parentElement.insertBefore(wrapper, this);
+            this.remove();
+          });
+        });
+      } catch (e) {
+        console.error("Failed to load videos", e);
+      }
+    }
+
+
+
+
+
+/////////////////////////////
+
+let isLoading = false;
+let pageTokens = {}; // store nextPageToken per query
+
+// Utility: random shuffle
+function shuffle(array) {
+  return array.sort(() => 0.5 - Math.random());
+}
+
+function fetchVideosByRandomQuery() {
+  if (isLoading) return;
+  isLoading = true;
+  document.getElementById("loader").style.display = "block";
+
+  // Shuffle and pick first
+  queries = shuffle(queries);
+  const query = queries[0];
+
+  const pageToken = pageTokens[query] || '';
+  const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&part=snippet&type=video&maxResults=50&q=${query}&pageToken=${pageToken}`;
+
+  fetch(searchUrl)
+    .then(res => res.json())
+    .then(data => {
+      pageTokens[query] = data.nextPageToken; // update for next fetch
+      const videoIds = data.items.map(item => item.id.videoId).join(",");
+      return fetch(`https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=contentDetails,snippet&id=${videoIds}`);
+    })
+    .then(res => res.json())
+    .then(data => {
+      const nonShorts = data.items.filter(video => {
+        return parseISODuration(video.contentDetails.duration) >= 60;
+      });
+      saveToLocalStorage(nonShorts);
+
+      fetchVideos(nonShorts.slice(0, 30));
+      isLoading = false;
+      document.getElementById("loader").style.display = "none";
+    })
+    .catch(err => {
+      console.error(err);
+      isLoading = false;
+      document.getElementById("loader").style.display = "none";
+    });
+}
+
+function parseISODuration(iso) {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  const hours = parseInt(match[1] || 0);
+  const minutes = parseInt(match[2] || 0);
+  const seconds = parseInt(match[3] || 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function renderVideos(items) {
+  const container = document.getElementById("videosContainer");
+  items.forEach(item => {
+    const video = document.createElement("div");
+    video.innerHTML = `
+      <iframe width="320" height="180"
+        src="https://www.youtube.com/embed/${item.id}"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+      <b>${item.snippet.title}</b><br><br>
+    `;
+    container.appendChild(video);
+  });
+}
+
+// Infinite scroll
+window.addEventListener('scroll', () => {
+  if (!isLoading && window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+      if(typeQ == 'all'){
+    fetchVideosByRandomQuery();
+      }
+  }
+});
+
+// Initial load
+//live
+function fetchLive(){
+
+const query = "gaming";
+const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&part=snippet&type=video&eventType=live&maxResults=10&q=${query}`;
+const saved = localStorage.getItem('live');
+if (saved && JSON.parse(saved).length > 0) {
+  loadFromLocal('live')
+} else {
+  console.log("No videos saved in LocalStorage");
+fetch(url)
+  .then(res => res.json())
+  .then(data => {
+    const liveVideos = data.items;
+    saveToLocal(liveVideos,'live')
+    fetchVideos(liveVideos);
+  });
+}
+}
+//news
+function fetchByTopic(t){
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&part=snippet&type=video&maxResults=50&q=${t}`;
+const saved = localStorage.getItem(t);
+if (saved && JSON.parse(saved).length > 0) {
+  loadFromLocal(t)
+} else {
+  console.log("No videos saved in LocalStorage");
+     fetch(searchUrl)
+    .then(res => res.json())
+    .then(data => {
+
+      const videoIds = data.items.map(item => item.id.videoId).join(",");
+      return fetch(`https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=contentDetails,snippet&id=${videoIds}`);
+    })
+    .then(res => res.json())
+    .then(data => {
+      const nonShorts = data.items.filter(video => {
+        return parseISODuration(video.contentDetails.duration) >= 60;
+      });
+      saveToLocalStorage(nonShorts);
+      saveToLocal(nonShorts,t)
+
+      fetchVideos(nonShorts.slice(0, 30));
+      isLoading = false;
+      document.getElementById("loader").style.display = "none";
+    })
+    .catch(err => {
+      console.error(err);
+      isLoading = false;
+      document.getElementById("loader").style.display = "none";
+    });
+
+}
+}
+/////////////////////////////////
+function saveToLocalStorage(videos) {
+  let saved = JSON.parse(localStorage.getItem("savedVideos") || "[]");
+  saved.push(...videos);
+  localStorage.setItem("savedVideos", JSON.stringify(saved));
+}
+// retrieve
+function loadFromLocalStorage() {
+  const saved = JSON.parse(localStorage.getItem("savedVideos") || "[]");
+  shuffleArray(saved);
+  fetchVideos(saved);
+}
+//dynamic storage
+function saveToLocal(videos,type) {
+  let saved = JSON.parse(localStorage.getItem(type) || "[]");
+  saved.push(...videos);
+  localStorage.setItem(type, JSON.stringify(saved));
+}
+// retrieve
+function loadFromLocal(type) {
+  const saved = JSON.parse(localStorage.getItem(type) || "[]");
+  shuffleArray(saved);
+  fetchVideos(saved);
+}
+//window on;load
+window.onload = () => {
+const saved = localStorage.getItem("savedVideos");
+if (saved && JSON.parse(saved).length > 0) {
+  loadFromLocalStorage()
+} else {
+  console.log("No videos saved in LocalStorage");
+  setTimeout(()=>{
+fetchVideosByRandomQuery();
+},1000)
+}
+
+};
+////shuffle video
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]]; // swap
+  }
+}
+
+  </script>
+  <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCuUdve4GlNAMLzSv5Qi0_bGNypw5yYQ8g",
+  authDomain: "ankit-5a28d.firebaseapp.com",
+  databaseURL: "https://ankit-5a28d-default-rtdb.firebaseio.com",
+  projectId: "ankit-5a28d",
+  storageBucket: "ankit-5a28d.appspot.com",
+  messagingSenderId: "640985728711",
+  appId: "1:640985728711:web:49b827b2fd52dd35b1e0e2",
+  measurementId: "G-6BNQ2LV3NB"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+const signInBtn = document.getElementById("sign-in");
+const signOutBtn = document.getElementById("signOutBtn");
+
+signInBtn.onclick = () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      console.log("Signed in:", result.user);
+    })
+    .catch((error) => console.error(error));
+};
+
+signOutBtn.onclick = () => {
+  signOut(auth);
+};
+
+// Handle user state changes
+onAuthStateChanged(auth, (user) => {
+  const profileSection = document.getElementById("profileSection");
+  if (user) {
+    document.getElementById("profilePic").src = user.photoURL;
+    document.getElementById("userName").innerText = user.displayName;
+    document.getElementById("userEmail").innerText = user.email;
+    profileSection.style.display = "block";
+    signInBtn.style.display = "none";
+  } else {
+    profileSection.style.display = "none";
+    signInBtn.style.display = "inline-block";
+  }
+});
+let x=1;
+document.getElementById("profilePic").addEventListener("click", () => {
+  const details = document.getElementById("profileDetails");
+  if(x==1){
+  details.style.display = 'block'
+  x = 0;
+  }
+  else{
+      details.style.display = "none"
+      x =1;
+  }
+});
+
+  </script>
+</body>
+</html>
