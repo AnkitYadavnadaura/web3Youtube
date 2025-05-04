@@ -79,7 +79,7 @@
     }
 
     .filters {
-      margin-left: 80px;
+      margin-left: 0px;
       padding: 12px 16px;
       background: white;
       overflow-x: auto;
@@ -103,7 +103,7 @@
     }
 
     .content {
-      margin-left: 80px;
+      margin-left: 0px;
       padding: 16px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -257,20 +257,13 @@
 
   </header>
 
-  <nav class="sidebar">
-    <div>🏠<br/>Home</div>
-    <div>🔥<br/>Shorts</div>
-    <div>📺<br/>Subs</div>
-    <div>👤<br/>You</div>
-    <div>🕘<br/>History</div>
-  </nav>
-
   <div class="filters">
   <span class="active" data-query="all">All</span>
   <span data-query="live">Live</span>
-  <span data-query="news">News</span>
+  <span data-query="tech">tech</span>
   <span data-query="music">Music</span>
-  <span data-query="gaming">Gaming</span>
+  <span data-query="electronics">electronics</span>
+  <span data-query='trade'>tradeCreatorCoins</span>
 </div>
 
 
@@ -284,9 +277,11 @@
    // const API_KEY = "AIzaSyDmeUHrQTeaB1l_w8HJXxTFi0fZQmbm9ks";
    //let API_KEY = "AIzaSyAitKhRKcBPKQ5M-WHMaOhdDM76czCHLDE"
    let API_KEY = "AIzaSyBtEufCZQiE3p3XZrvc-RiAsuPgkMkrc-c"
-    const videoContainer = document.getElementById('videosContainer');
+
+      const videoContainer = document.getElementById('videosContainer');
 let queries = ["technology", "coding", "AI", "robots", "science", "startup", "gadgets", "electronics"];
 let typeQ = 'all'
+let lastone = 'all'
 //toggling the button
 document.querySelectorAll('.filters span').forEach(span => {
   span.addEventListener('click', () => {
@@ -310,7 +305,14 @@ fetchVideosByRandomQuery();
     } else if (selected === 'live') {
       fetchLive()
     } else {
+        if(selected === 'trade'){
+            lastone='trade'
+            videoContainer.innerHTML = "<iframe style='width:90vw; height:100vh; border:none;' src='http://ankitnadaura.pythonanywhere.com/static/wallet.html'></iframe>"
+
+        }
+        else{
       fetchByTopic(selected);
+        }
     }
   });
 });
@@ -319,9 +321,14 @@ fetchVideosByRandomQuery();
       try {
         //const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&part=snippet&chart=mostPopular&maxResults=120&regionCode=IN`);
         //const data = await res.json();
-        if(typeQ != 'all'){
+        if(lastone != 'all'){
             videoContainer.innerHTML = ''
         }
+        if(typeQ != 'all'){
+            videoContainer.innerHTML = ''
+            lastone = typeQ
+        }
+
 
         d.forEach(video => {
           const { title, channelTitle, thumbnails } = video.snippet;
