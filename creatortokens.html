@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Token Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-4">🎨 Creator Token Platform</h1>
+
+    <div class="mb-6">
+      <button onclick="connect()" class="bg-blue-600 text-white px-4 py-2 rounded">Connect Wallet</button>
+      <p id="walletAddress" class="mt-2 text-sm text-gray-600"></p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- User Actions -->
+      <div class="space-y-4">
+        <button onclick="initWallet()" class="w-full bg-green-500 text-white py-2 rounded">Init Wallet</button>
+        <button onclick="addPLT()" class="w-full bg-yellow-500 text-white py-2 rounded">Add PLT</button>
+        <button onclick="createCreatorToken()" class="w-full bg-purple-600 text-white py-2 rounded">Create Token</button>
+        <button onclick="setPrice()" class="w-full bg-pink-500 text-white py-2 rounded">Set Token Price</button>
+        <button onclick="buyCreatorToken()" class="w-full bg-indigo-500 text-white py-2 rounded">Buy Token</button>
+      </div>
+
+      <!-- Channel Token Cards -->
+      <div>
+        <h2 class="text-xl font-semibold mb-3">📺 Featured Channels</h2>
+        <div id="channelList" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <div id="output" class="mt-6 text-sm text-gray-700"></div>
+  </div>
+
+  <script>
+    const contractAddress = "0x1Ded9eC20C72FD67f68E249062401FBF7BaC4814";
+    const abi = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "addPLT",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "buyCreatorToken",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "supply",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			}
+		],
+		"name": "createCreatorToken",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "initWallet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "setTokenPrice",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "creatorTokens",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "supply",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "sold",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			}
+		],
+		"name": "getCreatorToken",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "supply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sold",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "creator",
+						"type": "address"
+					}
+				],
+				"internalType": "struct Platform.CreatorToken",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			}
+		],
+		"name": "getCreatorTokenBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getMyCreatorToken",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "supply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sold",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "creator",
+						"type": "address"
+					}
+				],
+				"internalType": "struct Platform.CreatorToken",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getPLTBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "pltTokenSupply",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "tokenNameToCreator",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userBalances",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userCreatorTokenBalances",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "walletInitialized",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+
+    const channels = [
+      { name: "TechVision", token: "TVT" },
+      { name: "GamerZone", token: "GZT" },
+      { name: "MusicHub", token: "MHT" }
+    ];
+
+    let provider, signer, contract;
+
+    async function connect() {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      contract = new ethers.Contract(contractAddress, abi, signer);
+      document.getElementById('walletAddress').innerText = `Connected: ${await signer.getAddress()}`;
+    }
+
+    async function initWallet() {
+      const tx = await contract.initWallet();
+      await tx.wait();
+      notify("Wallet Initialized");
+    }
+
+    async function addPLT() {
+      const amount = prompt("PLT Amount:");
+      const tx = await contract.addPLT(ethers.utils.parseEther(amount));
+      await tx.wait();
+      notify("PLT Added");
+    }
+
+    async function createCreatorToken() {
+      const name = prompt("Token Name:");
+      const symbol = prompt("Symbol:");
+      const supply = prompt("Supply:");
+      const price = prompt("Price:");
+      const tx = await contract.createCreatorToken(name, symbol, supply, ethers.utils.parseEther(price));
+      await tx.wait();
+      notify("Token Created");
+    }
+
+    async function buyCreatorToken() {
+      const creator = prompt("Creator Address:");
+      const amount = prompt("Amount to Buy:");
+      const tx = await contract.buyCreatorToken(creator, amount);
+      await tx.wait();
+      notify("Token Bought");
+    }
+
+    async function setPrice() {
+      const price = prompt("New Price:");
+      const tx = await contract.setTokenPrice(ethers.utils.parseEther(price));
+      await tx.wait();
+      notify("Price Set");
+    }
+
+    function notify(msg) {
+      document.getElementById("output").innerText = msg;
+    }
+
+    function renderChannels() {
+      const container = document.getElementById("channelList");
+      channels.forEach(({ name, token }) => {
+        const div = document.createElement("div");
+        div.className = "p-4 bg-white rounded shadow";
+        div.innerHTML = `
+          <h3 class="font-bold">${name}</h3>
+          <p>Token: <span class="text-blue-600 font-mono">${token}</span></p>
+          <button class="mt-2 bg-blue-500 text-white px-3 py-1 rounded" onclick="alert('Simulate buying ${token}')">Buy</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    renderChannels();
+  </script>
+</body>
+</html>
